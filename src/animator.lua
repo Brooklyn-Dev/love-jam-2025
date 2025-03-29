@@ -13,11 +13,13 @@ Animator.__index = Animator
 --- @return Animator
 function Animator.new(duration)
     local self = setmetatable({}, Animator)
+
     self.time = 0
     self.duration = duration or 0.3
     self.progress = 0
     self.isAnimating = false
     self.callback = nil
+
     return self
 end
 
@@ -35,10 +37,13 @@ function Animator:update(dt)
     if not self.isAnimating then return end
 
     self.time = self.time + dt
+
     if self.time <= self.duration then
         self.progress = self.time / self.duration
+
     elseif self.time <= self.duration * 2 then
         self.progress = 1 - (self.time - self.duration) / self.duration
+
     else
         self.progress = 0
         self.isAnimating = false
@@ -46,8 +51,8 @@ function Animator:update(dt)
     end
 end
 
---- Returns the current animation progress.
---- @return number The animation progress (0 to 1).
+--- Returns the current animation progress (0 to 1).
+--- @return number
 function Animator:getProgress()
     return self.progress
 end

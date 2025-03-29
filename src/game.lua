@@ -12,7 +12,6 @@ local Door = require('door')
 
 --- @class Game
 --- @field seed number Random seed for rng.
---- @field state string Current game state ('playing', etc.).
 --- @field levelIndex number Current level number.
 --- @field levelReset boolean Whether the level is resetting.
 --- @field levelComplete boolean Whether the level is completed.
@@ -100,26 +99,18 @@ end
 
 --- Resets the current level, triggering transition animation.
 function Game:resetLevel()
-    self.state = 'playing'
     self.soundManager:play('player_death')
     self.levelReset = true
-    self.animator:start(function()
-        self:loadLevel(self.levelIndex)
-        self.levelReset = false
-    end)
+    self.animator:start()
 end
 
 --- Loads the next level, resetting the game state.
 function Game:nextLevel()
     self.seed = os.time()
     self.levelIndex = self.levelIndex + 1
-    self.state = 'playing'
     self.soundManager:play('next_level')
     self.levelComplete = true
-    self.animator:start(function()
-        self:loadLevel(self.levelIndex)
-        self.levelComplete = false
-    end)
+    self.animator:start()
 end
 
 --- Handles a game tick (step), updating all entities.
@@ -264,12 +255,13 @@ function Game:update(dt)
     self.animator:update(dt)
 
     if self.animator:getProgress() >= 0.5 then
-        if self.levelComplete then
-            self:loadLevel(self.levelIndex)
-            self.levelComplete = false
-        elseif self.levelReset then
+        if self.levelReset then
             self:loadLevel(self.levelIndex)
             self.levelReset = false
+
+        elseif self.levelComplete then
+            self:loadLevel(self.levelIndex)
+            self.levelComplete = false
         end
     end
 end
@@ -289,7 +281,7 @@ function Game:draw()
     self:drawEntities(self.keys)
     self:drawEntities(self.doors)
 
-    if not self.levelComplete and not self.levelReset then
+    if not self.levelReset and not self.levelComplete then
         self.player:draw()
     end
 
@@ -315,7 +307,7 @@ function Game:drawUI()
     love.graphics.print("Level: " .. self.levelIndex, 0, 0)
     love.graphics.print("Keys: " .. self.keysCollected, 0, 32)
 
-    if self.levelIndex == 11 then
+    if self.levelIndex == 11 and not self.levelComplete then
         local winText = "You Win."
         local winTextWidth = love.graphics.getFont():getWidth(winText)
 
@@ -338,7 +330,7 @@ end
 --- Handles key presses.
 --- @param key string The key that was pressed.
 function Game:keypressed(key)
-    if self.state == 'playing' then
+    if not self.levelReset and not self.levelComplete then
         self.player:keypressed(key)
     end
 end
@@ -346,9 +338,7 @@ end
 --- Handles key releases.
 --- @param key string The key that was released.
 function Game:keyreleased(key)
-    if self.state == 'playing' then
-        self.player:keyreleased(key)
-    end
+    self.player:keyreleased(key)
 end
 
 return Game
